@@ -2,6 +2,10 @@ import express from 'express';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
+import path from 'path';
+
+const __dirname = path.resolve();
+app.use(express.static(path.join(__dirname, 'public')));
 
 dotenv.config();
 const app = express();
