@@ -1,0 +1,9 @@
+CREATE TABLE licences (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type VARCHAR(20) NOT NULL,
+  days_remaining INTEGER,
+  activated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+CREATE INDEX ON licences (user_id);
