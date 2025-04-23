@@ -1,18 +1,30 @@
+// server.js
 import express from 'express';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
 import path from 'path';
-
-const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, 'public')));
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+// ESM: policz __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 1) Stwórz instancję aplikacji
 const app = express();
+
+// 2) Serwuj pliki statyczne z /public
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 3) JSON-body parser
 app.use(express.json());
+
+// 4) Połączenie do bazy
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
-// Check licence
+// 5) Endpointy:
 app.get('/check-licence', async (req, res) => {
   const userId = req.query.userId || 'default';
   const { rows } = await pool.query(
@@ -27,7 +39,6 @@ app.get('/check-licence', async (req, res) => {
   res.json({ licence: lic.type, days, object: {} });
 });
 
-// Create or update licence
 app.post('/licence', async (req, res) => {
   const { userId, type, days } = req.body;
   const { rows } = await pool.query(
@@ -39,7 +50,7 @@ app.post('/licence', async (req, res) => {
   res.json(rows[0]);
 });
 
-// Daily decrement for timed licences at midnight
+// 6) Cron do dekrementacji
 cron.schedule('0 0 * * *', async () => {
   await pool.query(
     `UPDATE licences
@@ -50,5 +61,6 @@ cron.schedule('0 0 * * *', async () => {
   console.log('Cron: odjęto 1 dzień od licencji timed');
 });
 
+// 7) Start serwera
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server działa na porcie ${PORT}`));
