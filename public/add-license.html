@@ -8,27 +8,22 @@
 <body style="font-family: sans-serif; padding: 2rem; max-width: 400px; margin: auto;">
   <h1>Dodaj licencję</h1>
   <form id="licForm">
-    <label>
-      User ID:<br/>
-      <input type="text" id="userId" required />
-    </label>
+    <label>User ID:<br/><input type="text" id="userId" required /></label>
     <br/><br/>
-    <label>
-      Typ licencji:<br/>
+    <label>Typ licencji:<br/>
       <select id="type">
         <option value="timed">Timed (dni)</option>
         <option value="unlimited">Unlimited</option>
       </select>
     </label>
     <br/><br/>
-    <label id="daysLabel">
-      Liczba dni:<br/>
-      <input type="number" id="days" min="1" value="30" />
-    </label>
+    <label id="daysLabel">Liczba dni:<br/><input type="number" id="days" min="1" value="30" /></label>
     <br/><br/>
     <button type="submit">Utwórz</button>
+    <br/><br/>
+    <input id="license-input" type="text" placeholder="Wklej swój kod licencji" />
+    <button id="activate-btn">Activate</button>
   </form>
-
   <pre id="result" style="background:#f5f5f5;padding:1rem;margin-top:1rem;"></pre>
 
   <script>
@@ -36,33 +31,30 @@
     const typeSelect = document.getElementById('type');
     const daysLabel = document.getElementById('daysLabel');
     const result = document.getElementById('result');
-    const RAILWAY_URL = window.location.origin; // lub wpisz ręcznie: 'https://your-app.up.railway.app'
-
-    // Pokaż/ukryj pole dni
-    typeSelect.addEventListener('change', () => {
+    form.addEventListener('change', () => {
       daysLabel.style.display = typeSelect.value === 'timed' ? 'block' : 'none';
     });
-
     form.addEventListener('submit', async e => {
       e.preventDefault();
       const userId = document.getElementById('userId').value.trim();
       const type = typeSelect.value;
-      const days = type === 'timed'
-        ? parseInt(document.getElementById('days').value, 10)
-        : null;
-
-      try {
-        const resp = await fetch(`${RAILWAY_URL}/licence`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, type, days })
-        });
-        const data = await resp.json();
-        // po uzyskaniu potwierdzenia z API
-        window.localStorage.setItem('userId', userId);
-        result.textContent = JSON.stringify(data, null, 2);
-      } catch (err) {
-        result.textContent = 'Błąd: ' + err.toString();
+      const days = type === 'timed' ? parseInt(document.getElementById('days').value, 10) : null;
+      const resp = await fetch(`/licence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, type, days })
+      });
+      const data = await resp.json();
+      window.localStorage.setItem('userId', data.user_id || userId);
+      result.textContent = JSON.stringify(data, null, 2);
+    });
+    document.getElementById('activate-btn').addEventListener('click', e => {
+      e.preventDefault();
+      const code = document.getElementById('license-input').value.trim();
+      if (code) {
+        localStorage.setItem('licenseToken', code);
+        chrome.storage.local.set({ licenseToken: code });
+        alert('Token zapisany!');
       }
     });
   </script>
