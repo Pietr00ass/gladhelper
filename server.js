@@ -1,6 +1,5 @@
 // server.js
 import express from 'express';
-import cors from 'cors';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
@@ -10,6 +9,7 @@ import { fileURLToPath } from 'url';
 dotenv.config();
 
 // ESM: __filename i __dirname
+enable
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -19,12 +19,15 @@ const app = express();
 // 2) Serwuj pliki statyczne z /public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 3) Włącz CORS (dopuszczając domenę gry Gladiatus)
-app.use(cors({
-  origin: 'https://s63-pl.gladiatus.gameforge.com',
-  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
-  credentials: true
-}));
+// 3) Ręczne CORS (bez zewnętrznych paczek)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://s63-pl.gladiatus.gameforge.com');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 
 // 4) JSON-body parser
 app.use(express.json());
