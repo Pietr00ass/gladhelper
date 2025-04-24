@@ -9,17 +9,19 @@ import { fileURLToPath } from 'url';
 dotenv.config();
 
 // ESM: __filename i __dirname
-const __filename = fileURLToPath(import.meta.url);
+tconst __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 1) Stwórz instancję aplikacji
+// Inicjalizacja Express
 const app = express();
 
-// 2) Serwuj pliki statyczne z /public
+// Health check
+app.get('/health', (_req, res) => res.sendStatus(200));
+
+// Serwowanie statycznych plików
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 3) Ręczne CORS (bez zewnętrznych paczek) – uwzględnienie nagłówka x-token
-app.use((req, res, next) => {
+// Ręczne CORS dla domeny gry Gladiatus\ napp.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://s63-pl.gladiatus.gameforge.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Token');
@@ -28,13 +30,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// 4) JSON-body parser
+// JSON parser
 app.use(express.json());
 
-// 5) Połączenie do bazy
+// Połączenie do bazy PostgreSQL
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
-// Migracja: tworzenie tabeli licences, jeśli brak
+// Automatyczna migracja tabeli licences
 (async () => {
   try {
     await pool.query(`
@@ -57,7 +59,7 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
   }
 })();
 
-// 6) Endpointy:
+// Obsługa GET i PUT dla /check-licence
 const handleCheckLicence = async (req, res) => {
   const userId = req.query.userId || 'default';
   try {
@@ -66,20 +68,31 @@ const handleCheckLicence = async (req, res) => {
       [userId]
     );
     if (rows.length === 0) {
-      return res.json({ licence: 'none', days: 0, object: {} });
+      return res.json({ licence: 'none', days: 0, object: {}, premium: false, active: false, expired: true, features: [] });
     }
     const lic = rows[0];
-    const days = lic.type === 'unlimited' ? Number.MAX_SAFE_INTEGER : lic.days_remaining;
-    return res.json({ licence: lic.type, days, object: {} });
+    const daysRemaining = lic.type === 'unlimited' ? Number.MAX_SAFE_INTEGER : lic.days_remaining;
+    const premium = lic.type !== 'none';
+    const active = daysRemaining > 0;
+    const expired = !active;
+    return res.json({
+      licence: lic.type,
+      days: daysRemaining,
+      object: {},
+      premium,
+      active,
+      expired,
+      features: []
+    });
   } catch (err) {
     console.error('ERROR /check-licence:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 app.get('/check-licence', handleCheckLicence);
 app.put('/check-licence', handleCheckLicence);
 
+// Tworzenie / aktualizacja licencji
 app.post('/licence', async (req, res) => {
   const { userId, type, days } = req.body;
   try {
@@ -96,7 +109,7 @@ app.post('/licence', async (req, res) => {
   }
 });
 
-// 7) Cron do dekrementacji do dekrementacji
+// Cron dekrementujący days_remaining o 1 dziennie
 cron.schedule('0 0 * * *', async () => {
   try {
     await pool.query(
@@ -111,6 +124,6 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
-// 8) Start serwera
+// Uruchomienie serwera
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server działa na porcie ${PORT}`));
