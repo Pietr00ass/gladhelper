@@ -35,7 +35,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // Połączenie do bazy PostgreSQL
-tconst pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
 // Automatyczna migracja tabeli licences
 (async () => {
