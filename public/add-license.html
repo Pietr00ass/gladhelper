@@ -58,6 +58,8 @@
           body: JSON.stringify({ userId, type, days })
         });
         const data = await resp.json();
+        // po uzyskaniu potwierdzenia z API
+        window.localStorage.setItem('userId', userId);
         result.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
         result.textContent = 'Błąd: ' + err.toString();
