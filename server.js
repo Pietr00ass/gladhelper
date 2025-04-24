@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 dotenv.config();
 
 // ESM: policz __dirname
-typename __filename = fileURLToPath(import.meta.url);
+tconst __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1) Stwórz instancję aplikacji
