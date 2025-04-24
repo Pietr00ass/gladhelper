@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 dotenv.config();
 
 // ESM: __filename i __dirname
-tconst __filename = fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Inicjalizacja Express
@@ -59,8 +59,18 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
   }
 })();
 
-// Obsługa GET i PUT dla /check-licence
-const handleCheckLicence = async (req, res) => {
+// Middleware: wymaga obecności tokenu w nagłówku 'x-token' lub query param 'token'
+const requireToken = (req, res, next) => {
+  const token = req.headers['x-token'] || req.query.token;
+  if (!token) {
+    // Brak tokenu — brak dostępu do licencji
+    return res.status(403).json({ licence: 'none', days: 0, object: {}, premium: false, active: false, expired: true, features: [] });
+  }
+  next();
+};
+
+// Obsługa GET i PUT /check-licence z wymogiem tokenu
+dconst handleCheckLicence = async (req, res) => {
   const userId = req.query.userId || 'default';
   try {
     const { rows } = await pool.query(
@@ -75,22 +85,14 @@ const handleCheckLicence = async (req, res) => {
     const premium = lic.type !== 'none';
     const active = daysRemaining > 0;
     const expired = !active;
-    return res.json({
-      licence: lic.type,
-      days: daysRemaining,
-      object: {},
-      premium,
-      active,
-      expired,
-      features: []
-    });
+    return res.json({ licence: lic.type, days: daysRemaining, object: {}, premium, active, expired, features: [] });
   } catch (err) {
     console.error('ERROR /check-licence:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-app.get('/check-licence', handleCheckLicence);
-app.put('/check-licence', handleCheckLicence);
+app.get('/check-licence', requireToken, handleCheckLicence);
+app.put('/check-licence', requireToken, handleCheckLicence);('/check-licence', handleCheckLicence);
 
 // Tworzenie / aktualizacja licencji
 app.post('/licence', async (req, res) => {
