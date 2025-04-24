@@ -1,4 +1,3 @@
-// server.js
 import express from 'express';
 import pg from 'pg';
 import dotenv from 'dotenv';
@@ -21,9 +20,13 @@ app.get('/health', (_req, res) => res.sendStatus(200));
 // Serwowanie statycznych plików
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ręczne CORS dla domeny gry Gladiatus
+// Ręczne CORS dla wszystkich subdomen Gladiatus
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://s63-pl.gladiatus.gameforge.com');
+  const origin = req.headers.origin;
+  const allowedPattern = /^https:\/\/.+\.gladiatus\.gameforge\.com$/;
+  if (origin && allowedPattern.test(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Token');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -64,8 +67,15 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const requireToken = (req, res, next) => {
   const token = req.headers['x-token'] || req.query.token;
   if (!token) {
-    // Brak tokenu — brak dostępu do licencji
-    return res.status(403).json({ licence: 'none', days: 0, object: {}, premium: false, active: false, expired: true, features: [] });
+    return res.status(403).json({
+      licence: 'none',
+      days: 0,
+      object: {},
+      premium: false,
+      active: false,
+      expired: true,
+      features: []
+    });
   }
   next();
 };
@@ -79,14 +89,30 @@ const handleCheckLicence = async (req, res) => {
       [userId]
     );
     if (rows.length === 0) {
-      return res.json({ licence: 'none', days: 0, object: {}, premium: false, active: false, expired: true, features: [] });
+      return res.json({
+        licence: 'none',
+        days: 0,
+        object: {},
+        premium: false,
+        active: false,
+        expired: true,
+        features: []
+      });
     }
     const lic = rows[0];
     const daysRemaining = lic.type === 'unlimited' ? Number.MAX_SAFE_INTEGER : lic.days_remaining;
     const premium = lic.type !== 'none';
     const active = daysRemaining > 0;
     const expired = !active;
-    return res.json({ licence: lic.type, days: daysRemaining, object: {}, premium, active, expired, features: [] });
+    return res.json({
+      licence: lic.type,
+      days: daysRemaining,
+      object: {},
+      premium,
+      active,
+      expired,
+      features: []
+    });
   } catch (err) {
     console.error('ERROR /check-licence:', err);
     return res.status(500).json({ error: 'Internal server error' });
