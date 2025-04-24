@@ -9,8 +9,8 @@ import { fileURLToPath } from 'url';
 
 dotenv.config();
 
-// ESM: policz __dirname
-tconst __filename = fileURLToPath(import.meta.url);
+// ESM: __filename i __dirname
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1) Stwórz instancję aplikacji
@@ -22,7 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 3) Włącz CORS (dopuszczając domenę gry Gladiatus)
 app.use(cors({
   origin: 'https://s63-pl.gladiatus.gameforge.com',
-  methods: ['GET','POST','PUT','OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
   credentials: true
 }));
 
