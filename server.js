@@ -58,7 +58,7 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 })();
 
 // 6) Endpointy:
-app.get('/check-licence', async (req, res) => {
+const handleCheckLicence = async (req, res) => {
   const userId = req.query.userId || 'default';
   try {
     const { rows } = await pool.query(
@@ -75,7 +75,10 @@ app.get('/check-licence', async (req, res) => {
     console.error('ERROR /check-licence:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
-});
+};
+
+app.get('/check-licence', handleCheckLicence);
+app.put('/check-licence', handleCheckLicence);
 
 app.post('/licence', async (req, res) => {
   const { userId, type, days } = req.body;
@@ -93,7 +96,7 @@ app.post('/licence', async (req, res) => {
   }
 });
 
-// 7) Cron do dekrementacji
+// 7) Cron do dekrementacji do dekrementacji
 cron.schedule('0 0 * * *', async () => {
   try {
     await pool.query(
