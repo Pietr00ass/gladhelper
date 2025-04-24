@@ -18,11 +18,11 @@ const app = express();
 // 2) Serwuj pliki statyczne z /public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 3) Ręczne CORS (bez zewnętrznych paczek)
+// 3) Ręczne CORS (bez zewnętrznych paczek) – uwzględnienie nagłówka x-token
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://s63-pl.gladiatus.gameforge.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Token');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
