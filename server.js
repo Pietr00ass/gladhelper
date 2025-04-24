@@ -23,6 +23,27 @@ app.use(express.json());
 
 // 4) Połączenie do bazy
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+// Po linijce: const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+(async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS licences (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      type VARCHAR(20) NOT NULL,
+      days_remaining INTEGER,
+      activated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_licences_user_id ON licences (user_id);
+  `);
+  console.log('✅ Tabela licences jest gotowa');
+})().catch(err => {
+  console.error('❌ Błąd tworzenia tabeli licences:', err);
+  process.exit(1);
+});
+
 
 // 5) Endpointy:
 app.get('/check-licence', async (req, res) => {
