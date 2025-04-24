@@ -21,10 +21,11 @@ app.get('/health', (_req, res) => res.sendStatus(200));
 // Serwowanie statycznych plików
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ręczne CORS dla domeny gry Gladiatus\ napp.use((req, res, next) => {
+// Ręczne CORS dla domeny gry Gladiatus
+app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://s63-pl.gladiatus.gameforge.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Token');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
@@ -34,7 +35,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // Połączenie do bazy PostgreSQL
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+tconst pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
 // Automatyczna migracja tabeli licences
 (async () => {
@@ -70,7 +71,7 @@ const requireToken = (req, res, next) => {
 };
 
 // Obsługa GET i PUT /check-licence z wymogiem tokenu
-dconst handleCheckLicence = async (req, res) => {
+const handleCheckLicence = async (req, res) => {
   const userId = req.query.userId || 'default';
   try {
     const { rows } = await pool.query(
@@ -92,7 +93,7 @@ dconst handleCheckLicence = async (req, res) => {
   }
 };
 app.get('/check-licence', requireToken, handleCheckLicence);
-app.put('/check-licence', requireToken, handleCheckLicence);('/check-licence', handleCheckLicence);
+app.put('/check-licence', requireToken, handleCheckLicence);
 
 // Tworzenie / aktualizacja licencji
 app.post('/licence', async (req, res) => {
